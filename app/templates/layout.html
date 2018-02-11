@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>{% block title %}{% endblock %}</title>
+    </head>
+    <body>
+    {% block body %}
+        <h1>这个标题在双亲模板中定义</h1>
+    {% endblock %}
+    </body>
+</html>
+
+
+<link rel="stylesheet" href="{{ url_for("static", filename="css/w3.css") }}">

@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>{{article['article_title']}}</title>
+</head>
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="{{ url_for("static", filename="css/w3.css") }}">
+
+<body>
+    <div class="w3-container w3-blue w3-animate-top">
+        <h3>文章词项分析</h3>
+    </div>
+    <div class="w3-light-grey w3-padding-16 w3-center">
+        <h4 class="w3-xlarge"><a target="_blank" style="text-decoration: none" href={{article['article_url']}}>{{article['article_title']}}</a></h4>
+    </div>
+    
+    <div class="w3-row w3-container w3-margin-top">
+        
+        <div class="w3-card-4 w3-third w3-justify w3-container">
+            <h3 class="w3-green">摘要</h3>
+            <h5 class="w3-text-orange">{{article['article_note']}}</h4>
+
+            <h3 class="w3-green">正文</h3>
+            <p>{{article['article_date']}}</p>
+            <div class="w3-left-align">
+                {{article['article_text']|safe}}
+            </div>
+        </div>
+
+        <div class=" w3-twothird w3-justify w3-container">
+            <h3 class="w3-green">词分析矩阵</h3>
+            <table class="w3-table w3-striped w3-border w3-hoverable w3-small">
+                <tr class="w3-text-red w3-large">
+                    <th>词频</th>
+                    <th>1级</th>
+                    <th>2级</th>
+                    <th>3级</th>
+                    <th>4级</th>
+                    <th>5级</th>
+                    <th>次数</th>
+                </tr>
+                {% for key, value in simi_words.items() %}
+                <tr>
+                    <th class="w3-text-black">{{key}}</th>
+                    <th class="w3-text-teal">
+                        {{value[0][0]}}
+                    </th>
+                    <th class="w3-text-green">
+                        {{value[1][0]}}
+                    </th>
+                    <th class="w3-text-light-green">
+                        {{value[2][0]}}
+                    </th>
+                    <th class="w3-text-amber">
+                        {{value[3][0]}}
+                    </th>
+                    <th class="w3-text-orange">
+                        {{value[4][0]}}
+                    </th>
+                    <th>
+                        <div class="w3-light-blue">
+                            <div class="w3-container w3-blue" style="width:{{data[key]}}%">{{data[key]}}</div>
+                        </div>
+                    </th>
+
+                </tr>
+                {% endfor %}
+            </table>
+        </div>
+    </div>
+    <div class="w3-container w3-blue w3-margin-top">
+        <p>@感谢妈咪和熙恩的支持 哈利路亚</p>
+    </div>
+</body>
+
+
+</html>

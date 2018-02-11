@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>AII</title>
+</head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="{{ url_for("static", filename="css/w3.css") }}">
+
+<body>
+    <div class="w3-container w3-blue">
+        <h3 class="w3-left">目标清晰地进行系统性学习</h3>
+    </div>
+    <div class="w3-panel w3-padding-32">
+        <form class="w3-container w3-card-4" action="/" method="post">
+            <p>
+                <input class="w3-xxxlarge w3-text-orange w3-input w3-animate-input" name="keywords" type="text" placeholder="输入搜索..." style="width:50%">
+            </p>
+            <div class="w3-cell-row">
+                <div class="w3-card-4 w3-container w3-pale-blue w3-cell">
+                    <p>
+                        <input class="w3-radio" type="radio" name="website" value='all' checked>
+                        <label>全部Article</label>
+                    </p>
+                    {% for web in data.keys() %}
+                    <p>
+                        <input class="w3-radio" type="radio" name="website" value={{web}}>
+                        <label>{{data[web]}}</label>
+                    </p>
+                    {% endfor %}
+                </div>
+                <div class="w3-card-4 w3-container w3-pale-green w3-cell">
+                    <p>
+                        <input class="w3-radio" type="radio" name="match_model" value='match_phrase' checked>
+                        <label>短语模式 尽量少</label>
+                    </p>
+                    <p>
+                        <input class="w3-radio" type="radio" name="match_model" value='match'>
+                        <label>分词模式 尽量多</label>
+                    </p>
+                </div>
+                <div class="w3-card-4 w3-container w3-pale-red w3-cell">
+                    <p>
+                        <input class="w3-radio" type="radio" name="sort_model" value='score' checked>
+                        <label>相关度</label>
+                    </p>
+                    <p>
+                        <input class="w3-radio" type="radio" name="sort_model" value='date'>
+                        <label>发布日期</label>
+                    </p>
+                </div>
+            </div>
+            <p>
+                <button class="w3-btn w3-block w3-blue">搜索</button>
+            </p>
+        </form>
+    </div>
+    <div class="w3-container">
+        <button class="w3-margin w3-round w3-button w3-red"><a target="_blank" style="text-decoration: none" href="/cbnweek">洞察一财</a></button>
+        <button class="w3-margin w3-round w3-button w3-pink">Pink</button>
+        <button class="w3-margin w3-round w3-button w3-purple">Purple</button>
+        <button class="w3-margin w3-round w3-button w3-deep-purple">Deep Purple</button>
+        <button class="w3-margin w3-round w3-button w3-indigo">Indigo</button>
+        <button class="w3-margin w3-round w3-button w3-blue">Blue</button>
+        <button class="w3-margin w3-round w3-button w3-light-blue">Light Blue</button>
+        <button class="w3-margin w3-round w3-button w3-cyan">Cyan</button>
+        <button class="w3-margin w3-round w3-button w3-aqua">Aqua</button>
+        <button class="w3-margin w3-round w3-button w3-teal">Teal</button>
+        <button class="w3-margin w3-round w3-button w3-green">Green</button>
+        <button class="w3-margin w3-round w3-button w3-light-green">Light Green</button>
+        <button class="w3-margin w3-round w3-button w3-lime">Lime</button>
+        <button class="w3-margin w3-round w3-button w3-sand">Sand</button>
+        <button class="w3-margin w3-round w3-button w3-khaki">Khaki</button>
+        <button class="w3-margin w3-round w3-button w3-yellow">Yellow</button>
+        <button class="w3-margin w3-round w3-button w3-amber">Amber</button>
+        <button class="w3-margin w3-round w3-button w3-orange">Orange</button>
+        <button class="w3-margin w3-round w3-button w3-deep-orange">Deep Orange</button>
+        <button class="w3-margin w3-round w3-button w3-brown">Brown</button>
+        <button class="w3-margin w3-round w3-button w3-blue-grey">Blue Grey</button>
+        <button class="w3-margin w3-round w3-button w3-light-grey">Light Grey</button>
+        <button class="w3-margin w3-round w3-button w3-grey">Grey</button>
+        <button class="w3-margin w3-round w3-button w3-dark-grey">Dark Grey</button>
+        <button class="w3-margin w3-round w3-button w3-black">Black</button>
+        <button class="w3-margin w3-round w3-button w3-pale-red">Pale-red</button>
+        <button class="w3-margin w3-round w3-button w3-pale-yellow">Pale-yellow</button>
+        <button class="w3-margin w3-round w3-button w3-pale-green">Pale-green</button>
+        <button class="w3-margin w3-round w3-button w3-pale-blue">Pale-blue</button>
+        </p>
+    </div>
+</body>
+
+</html>

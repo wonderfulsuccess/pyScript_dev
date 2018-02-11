@@ -1,0 +1,46 @@
+
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>{{res["search_data"]}}</title>
+</head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="{{ url_for("static", filename="css/w3.css") }}">
+
+<body>
+    <div class="w3-container w3-blue w3-animate-top">
+        <h1>{{ res["search_data"]}} - {{ res['hits']['total'] }} 条结果</h1>
+    </div>
+    <ul class="w3-ul">
+
+        {% for hit in res['hits']['hits'] %}
+        <li>
+            <div class="w3-content">
+                <div class="w3-row w3-margin">
+                    <div class="w3-row w3-container">
+                        <h4 class="w3-light-blue"><a target="_blank" href='{{ hit["_source"]["link"] }}' style="text-decoration:none">{{ hit["_source"]["title"] }}</a></h4>
+                        <p>
+                            {{ hit["_source"]["date"] }}
+                            排名得分：{{ hit["_score"] }}
+                        </p>
+                        <p>
+                             <strong class="w3-text-orange">{{ hit["_source"]["summary"] }}</strong>
+                        </p>
+                        <p>
+                            <a target="_blank" style="text-decoration: none" href="/article?id={{ hit['_id'] }}&index={{hit['_index']}}&type={{hit['_type']}}">{{ hit["highlight"]["text"]|safe }}</a>
+                        </p>
+
+                    </div>
+                </div>
+            </div>
+        </li>
+        {% endfor %}
+    </ul>
+    <div class="w3-container w3-black">
+        <p>最多显示100条结果</p>
+    </div>
+</body>
+
+</html>

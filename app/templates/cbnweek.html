@@ -1,0 +1,32 @@
+
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>cbnweek</title>
+</head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="{{ url_for("static", filename="css/w3.css") }}">
+
+<body>
+    <div class="w3-panel w3-padding-32">
+        <div class="w3-container">
+            {% for maga in data %}
+            <div class="w3-container w3-quarter" style="width:100%;max-width:240px;height:400px">
+                <a href="{{maga['magazine_url']}}"><img class="w3-round" src="{{ maga['magazine_page_url'] }}" alt={{maga['magazine_title']}} style="width:100%"></a>
+                <div class="w3-round w3-margin-bottom w3-container w3-black">
+                    <p class="w3-text-green">{{ maga['magazine_date']}} {{ maga['magazine_no'] }}</p>
+                    <p class="w3-text-orange">
+                        <a style="text-decoration: none" href="/cbnweek_magazine_articles?url={{maga['magazine_url']}}">{{ maga['magazine_title'] }}</a>
+                    </p>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    <div class="w3-container w3-black">
+        <p>深入分析第一财经周刊文章</p>
+    </div>
+</body>
+</html>

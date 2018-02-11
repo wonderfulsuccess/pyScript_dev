@@ -1,0 +1,3 @@
+*.csv
+*.pyc
+app/analysis/trained_model/*

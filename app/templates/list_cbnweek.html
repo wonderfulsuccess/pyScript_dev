@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>{{res["search_data"]}}</title>
+</head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="{{ url_for("static", filename="css/w3.css") }}">
+
+<body>
+    <div class="w3-container w3-blue w3-animate-top">
+        <h1>{{ res["search_data"]}} - {{ res['hits']['total'] }} 条结果</h1>
+    </div>
+    <ul class="w3-ul">
+        {% for hit in res['hits']['hits'] %}
+        <li>
+            <div class="w3-content">
+                <div class="w3-row w3-margin">
+                    <div class="w3-row w3-container">
+                        <h4 class="w3-light-blue"><a target="_blank" href='{{ hit["_source"]["article_url"] }}' style="text-decoration:none">{{ hit["_source"]["article_title"] }}</a></h4>
+                        <p>
+                            {{ hit["_source"]["article_date"] }} 排名得分：{{ hit["_score"] }}
+                        </p>
+                        <p>
+                            <strong class="w3-text-orange">{{ hit["_source"]["article_note"] }}</strong>
+                        </p>
+                        <p>
+                            {% if 'highlight' in hit%}
+                            <a target="_blank" style="text-decoration: none" href="/article?id={{ hit['_id'] }}&index={{hit['_index']}}&type={{hit['_type']}}">{{ hit["highlight"]["article_text"]|safe }}</a>
+                            {% elif 'highlight' not in hit%}
+                            <img class="w3-round-large" src="{{ hit['_source']['magazine_page_url'] }}" style="height:200px">
+                            <a target="_blank" style="text-decoration: none" href="/article?id={{ hit['_id'] }}&index={{hit['_index']}}&type={{hit['_type']}}">
+                                <img class="w3-round-large" src="{{hit['_source']['article_page_url']}}" style="height:200px">
+                            </a>
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </li>
+        {% endfor %}
+    </ul>
+<!--     <div class="w3-middle w3-card-4 w3-bar w3-border w3-round" style="width:30%">
+        <a href="#" class="w3-bar-item w3-button">&laquo;</a>
+        <a href="#" class="w3-bar-item w3-button">1</a>
+        <a href="#" class="w3-bar-item w3-button">2</a>
+        <a href="#" class="w3-bar-item w3-button">3</a>
+        <a href="#" class="w3-bar-item w3-button">4</a>
+        <a href="#" class="w3-bar-item w3-button">&raquo;</a>
+    </div> -->
+    
+    <div class="w3-container w3-black">
+        <p>最多显示100条结果</p>
+    </div>
+</body>
+
+</html>
