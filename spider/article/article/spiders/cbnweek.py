@@ -32,7 +32,7 @@ class CBNWeekSpider(scrapy.Spider):
         return [Request('https://www.cbnweek.com/account/login',meta={'cookiejar' : "kjhs*&^78%$hjJJ8HkjKHnnndf*&^54sdnniiKhbnA"}, callback=self.parse)]
 
     def parse(self, response):
-        print("准备登陆...")
+        print("准备登陆...可能需要补充完整的用户名和密码")
         login_data = {
             "username":"wonderful****",
             "password":"wzs1***",
