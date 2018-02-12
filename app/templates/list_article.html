@@ -29,7 +29,11 @@
                              <strong class="w3-text-orange">{{ hit["_source"]["summary"] }}</strong>
                         </p>
                         <p>
+                            {% if 'highlight' in hit%}
                             <a target="_blank" style="text-decoration: none" href="/article?id={{ hit['_id'] }}&index={{hit['_index']}}&type={{hit['_type']}}">{{ hit["highlight"]["text"]|safe }}</a>
+                            {% elif 'highlight' not in hit%}
+                            <a target="_blank" style="text-decoration: none" href="/article?id={{ hit['_id'] }}&index={{hit['_index']}}&type={{hit['_type']}}">点击进入词项分析</a>
+                            {% endif %}
                         </p>
 
                     </div>

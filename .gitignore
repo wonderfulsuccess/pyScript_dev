@@ -1,3 +1,4 @@
 *.csv
 *.pyc
 app/analysis/trained_model/*
+app/trained_model/*

@@ -9,6 +9,7 @@ from model import searchAllData
 from model import getArticle
 from model import notCode
 from model import getcbnweekData
+from model import gensimSearch
 import markdown2
 
 app = Flask(__name__)
@@ -30,16 +31,25 @@ def search():
             website='cbnweek'
             # 匹配模式
             match_model = 'match'
-        if(website == 'all'):
-            data = searchAllData(search_data,match_model,sort)
-            return render_template('list_article.html', res=data)
-        if(website == "cbnweek"):
-            data = searchCbnWeekData(search_data, match_model,sort)
-            return render_template('list_cbnweek.html', res=data)
-        if(website in ["duozhiwang","jingmeiti","hurun"]):
-            article_index = "article_"+str(website)+"_index"
-            data = searchArticleData(data=search_data, index=article_index , data_type=str(website), match_model=match_model,sort=sort)
-            return render_template('list_article.html', res=data)
+
+        if match_model in ['lsi','lds','tfidf']:
+            res = gensimSearch(data=search_data, index=website)
+            if website=="cbnweek":
+                return render_template('list_cbnweek.html', res=res)
+            else:
+                return render_template('list_article.html', res=res)
+
+        else:
+            if(website == 'all'):
+                data = searchAllData(search_data,match_model,sort)
+                return render_template('list_article.html', res=data)
+            if(website == "cbnweek"):
+                data = searchCbnWeekData(search_data, match_model,sort)
+                return render_template('list_cbnweek.html', res=data)
+            if(website in ["duozhiwang","jingmeiti","hurun"]):
+                article_index = "article_"+str(website)+"_index"
+                data = searchArticleData(data=search_data, index=article_index , data_type=str(website), match_model=match_model,sort=sort)
+                return render_template('list_article.html', res=data)
     else:
         return render_template('index.html', data=WEB_LIST)
     

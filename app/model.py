@@ -1,6 +1,7 @@
 import os
 from elasticsearch import Elasticsearch
 from settings import WEB_LIST
+from analysis.nlp import Simlarity
 import arrow
 
 es = Elasticsearch()
@@ -12,6 +13,10 @@ cbnweek_sort_map={
         'score':'_score',
         'date':'article_date',
         }
+sim_cbnweek=Simlarity('cbnweek')
+sim_duozhiwang=Simlarity('duozhiwang')
+sim_jingmeiti=Simlarity('jingmeiti')
+sim_hurun=Simlarity('hurun')
 
 def searchCbnWeekData(data, match_model,sort):
 
@@ -21,7 +26,7 @@ def searchCbnWeekData(data, match_model,sort):
              "bool": {
                 "should": [
                     { match_model: { "magazine_url": data}},
-                    { match_model: { "article_text": data}}]
+                    { match_model: { "article_text": data}},]
                 }
         },
         "sort": [
@@ -146,6 +151,47 @@ def getArticle(_index, _type, _id):
     }
     res = es.search(body=search_body, index=_index, doc_type=_type)
     return res
+
+def searchIDList(id):
+    # should_body = []
+    # for id in id_list:
+    #     sb={"match_phrase":{"_id":id[0]}}
+    #     should_body.append(sb)
+    # should_body=str(should_body).replace("'",'"')
+    search_body={
+        "query":{
+            "match_phrase":{
+                "_id":id
+            }
+        }
+    }
+    res = es.search(body=search_body)
+    return res['hits']['hits'][0]
+
+
+def gensimSearch(data, index, sim_type='lsi', sort='score'):
+    # 对cbnweek进行主题匹配
+    raw_data=[]
+    if index=='cbnweek':
+        raw_data = sim_cbnweek.article_find_similarity(article=data)
+    # 对cbnweek进行主题匹配
+    elif index=='duozhiwang':
+        raw_data = sim_duozhiwang.article_find_similarity(article=data)
+    elif index=='jingmeiti':
+        raw_data = sim_jingmeiti.article_find_similarity(article=data)
+    elif index=='hurun':
+        raw_data = sim_hurun.article_find_similarity(article=data)
+
+    res={}
+    res["search_data"]=data
+    res['hits']={}
+    res['hits']['total']=len(raw_data)
+    res['hits']['hits']=[]
+    for i in raw_data:
+        res['hits']['hits'].append(searchIDList(i[0]))
+    print(res)
+    return res
+    
 
 def notCode(html):
     data = html.replace('<code>','<div>').replace('</code>','</div>')
