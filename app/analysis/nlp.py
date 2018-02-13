@@ -204,8 +204,7 @@ class W2VSimilarity():
     def test(self):
         print(self.model.similar_by_word('学习',topn=5))
 
-
-def create_text(index):
+def get_docs(index):
     index = 'article_'+index+'_index'
     es = Elasticsearch()
     texts=[]
@@ -231,7 +230,36 @@ def create_text(index):
     # 需要先修改ES setting max_result_window 参数 其默认为10000
     res = es.search(index=index,body=search_body)
     docs = res['hits']['hits']
-    print(len(docs))
+    return docs
+
+
+def create_text(docs,index):
+    index = 'article_'+index+'_index'
+    # es = Elasticsearch()
+    texts=[]
+    # stop_words=[]
+    # search_body={
+    #     "query": {
+    #         "match_all": {}
+    #     }
+    # }
+
+    # # 第一查询获取文档总数
+    # res = es.search(index=index,body=search_body)
+    # total = int(res['hits']['total'])
+    # print(total)
+
+    # search_body={
+    #     "size":total,
+    #     "from":0,
+    #     "query": {
+    #         "match_all": {}
+    #     }
+    # }
+    # # 需要先修改ES setting max_result_window 参数 其默认为10000
+    # res = es.search(index=index,body=search_body)
+    # docs = res['hits']['hits']
+    # print(len(docs))
 
     # 加载停用词，转化为一个list一个词为一个项目
     with open('stopwords.txt') as f:
@@ -270,6 +298,7 @@ def create_text(index):
     with open(pcikle_name, 'rb') as handle:
         texts = pickle.load(handle)
         print(len(texts))
+
 
 def create_corpus(texts_pickle):
     texts=[]
@@ -422,14 +451,19 @@ if __name__=="__main__":
     STOP_WORDS_PATH = "./stopwords.txt"
     # print('开始训练词向量模型 已有的模型即将被覆盖...')
     # train_w2v_model_all()
-    create_text('hurun')
-    create_corpus('hurun')
-    create_topic_model('hurun',20)
+
+    # duozhiwang_docs = get_docs('duozhiwang')
+    # jingmeiti_docs = get_docs('jingmeiti')
+    # all_docs = duozhiwang_docs+jingmeiti_docs
+    # print(len(duozhiwang_docs), len(jingmeiti_docs), len(all_docs))
+    # create_text(docs=all_docs, index='all')
+    create_corpus('all')
+    create_topic_model('all',50)
     # use_model()
-    create_similarity_model('hurun',10)
-    print(article_find_similarity('hurun',"硅谷为什么会成功"))
-
-
+    create_similarity_model('all',30)
+    print(article_find_similarity('all',"创客教育的未来在哪儿？"))
+    '''
+    '''
 
 
 

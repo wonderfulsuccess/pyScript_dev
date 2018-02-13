@@ -11,14 +11,28 @@
 
 <body>
     <div class="w3-container w3-blue w3-animate-top">
-        <h3>文章词项分析</h3>
+        <h3>文章综合分析</h3>
     </div>
     <div class="w3-light-grey w3-padding-16 w3-center">
         <h4 class="w3-xlarge"><a target="_blank" style="text-decoration: none" href={{article['article_url']}}>{{article['article_title']}}</a></h4>
     </div>
-    
+    <div class="w3-card-4 w3-row w3-container w3-margin-top">
+            <h3 class="w3-green">关联文章</h3>
+            {% for r in relate %}
+            <div class="w3-container w3-third">
+                <div class="we-card-4 w3-light-grey"  style="height: 200px">
+                    <p class="w3-text-orange">
+                        <a  style="text-decoration: none" href="{{ r['article_url'] }}">标题: {{r['article_title']}}</a>
+                    </p>
+                    <p class="w3-text-red">日期: {{r['article_date']}} -- 相关度: {{r['_score']}}</p>
+                    <p>
+                        <a target="_blank" style="text-decoration: none" href="/article?id={{ r['_id'] }}&index={{r['_index']}}&type={{r['_type']}}">摘要: {{r['article_note']}}</a>
+                    </p>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
     <div class="w3-row w3-container w3-margin-top">
-        
         <div class="w3-card-4 w3-third w3-justify w3-container">
             <h3 class="w3-green">摘要</h3>
             <h5 class="w3-text-orange">{{article['article_note']}}</h4>
@@ -69,6 +83,10 @@
                 </tr>
                 {% endfor %}
             </table>
+                
+            <div class="w3-panel w3-padding-32">
+    </div>
+
         </div>
     </div>
     <div class="w3-container w3-blue w3-margin-top">

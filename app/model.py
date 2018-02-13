@@ -13,10 +13,14 @@ cbnweek_sort_map={
         'score':'_score',
         'date':'article_date',
         }
-sim_cbnweek=Simlarity('cbnweek')
-sim_duozhiwang=Simlarity('duozhiwang')
-sim_jingmeiti=Simlarity('jingmeiti')
-sim_hurun=Simlarity('hurun')
+# 主题相似性有多个文档集合匹配模型 需要一一定义
+sim={
+    'cbnweek':Simlarity('cbnweek'),
+    'duozhiwang':Simlarity('duozhiwang'),
+    'jingmeiti':Simlarity('jingmeiti'),
+    'hurun':Simlarity('hurun'),
+    'all':Simlarity('all'),
+}
 
 def searchCbnWeekData(data, match_model,sort):
 
@@ -170,26 +174,34 @@ def searchIDList(id):
 
 
 def gensimSearch(data, index, sim_type='lsi', sort='score'):
-    # 对cbnweek进行主题匹配
-    raw_data=[]
-    if index=='cbnweek':
-        raw_data = sim_cbnweek.article_find_similarity(article=data)
-    # 对cbnweek进行主题匹配
-    elif index=='duozhiwang':
-        raw_data = sim_duozhiwang.article_find_similarity(article=data)
-    elif index=='jingmeiti':
-        raw_data = sim_jingmeiti.article_find_similarity(article=data)
-    elif index=='hurun':
-        raw_data = sim_hurun.article_find_similarity(article=data)
-
+    raw_data=sim[index].article_find_similarity(article=data)
     res={}
-    res["search_data"]=data
+    search_data=data
+    # 防止搜索字符安太长撑爆页眉
+    if len(search_data) >= 20:
+        search_data=data[:20]+'...'
+    res["search_data"]=search_data
     res['hits']={}
     res['hits']['total']=len(raw_data)
     res['hits']['hits']=[]
     for i in raw_data:
-        res['hits']['hits'].append(searchIDList(i[0]))
-    print(res)
+        append_data = searchIDList(i[0])
+        append_data['_score'] = i[1]
+        res['hits']['hits'].append(append_data)
+    # res_datatype={
+    #     'search_data':'***********',
+    #     'hits':{
+    #         'total':789,
+    #         'hits':[
+    #             {
+    #                 '_index':'***',
+    #                 '_source':{
+    #                      XXXXX
+    #                  }
+    #             }
+    #         ]
+    #     }
+    # }
     return res
     
 

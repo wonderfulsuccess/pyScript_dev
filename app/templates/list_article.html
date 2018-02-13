@@ -32,7 +32,7 @@
                             {% if 'highlight' in hit%}
                             <a target="_blank" style="text-decoration: none" href="/article?id={{ hit['_id'] }}&index={{hit['_index']}}&type={{hit['_type']}}">{{ hit["highlight"]["text"]|safe }}</a>
                             {% elif 'highlight' not in hit%}
-                            <a target="_blank" style="text-decoration: none" href="/article?id={{ hit['_id'] }}&index={{hit['_index']}}&type={{hit['_type']}}">点击进入词项分析</a>
+                            <a target="_blank" style="text-decoration: none" href="/article?id={{ hit['_id'] }}&index={{hit['_index']}}&type={{hit['_type']}}"><h2 class="w3-text-light-green">查看文章原文和词项分析</h2></a>
                             {% endif %}
                         </p>
 

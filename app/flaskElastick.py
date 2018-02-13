@@ -10,6 +10,7 @@ from model import getArticle
 from model import notCode
 from model import getcbnweekData
 from model import gensimSearch
+import arrow
 import markdown2
 
 app = Flask(__name__)
@@ -58,8 +59,8 @@ def search():
 def get_list():
     return render_template('list.html')
 
-
 @app.route('/article')
+
 def get_article():
     _id = request.args.get('id')
     _index = request.args.get('index')
@@ -91,8 +92,36 @@ def get_article():
             simi_words[k] = list(w2v.simi_words(k))
         except Exception as e:
             simi_words[k] = list(range(len(data.items())))
+
+    # 请注意这里的index为 article_duozhiwang_index格式 需要转化为duozhiwang格式
+    relate_articles_res = gensimSearch(data=article['article_text'], index=_index.split('_')[1])
+    # 需要针对cbnweek和article的不同格式进行格式转化
+    inuse_relate_articles_res = relate_articles_res['hits']['hits']
+    relate_article=[]
+    for irar in inuse_relate_articles_res:
+        t={}
+        # 如果是cbnweek有需要特殊处理 :(
+        if _type in ["duozhiwang","jingmeiti","hurun"]:
+            t['article_title']=irar['_source']['title']
+            t['article_note']=irar['_source']['summary']
+            t['article_url']=irar['_source']['link']
+            t['article_date']=str(arrow.get(irar['_source']['date']).format('YYYY/MM/DD'))
+        else:
+            t['article_title']=irar['_source']['article_title']
+            t['article_note']=irar['_source']['article_note']
+            t['article_url']=irar['_source']['article_url']
+            t['article_date']=str(arrow.get(irar['_source']['article_date']).format('YYYY/MM/DD'))
+
+        t['_id']=irar['_id']
+        t['_index']=irar['_index']
+        t['_type']=irar['_type']
+        t['_score']=irar['_score']
         
-    return render_template('article.html', article=article, data=data, simi_words=simi_words)
+        relate_article.append(t)
+    print('-'*80)
+    print(relate_article)
+
+    return render_template('article.html', article=article, data=data, simi_words=simi_words, relate=relate_article)
 
 
 @app.route('/cbnweek', methods=['GET', 'POST'])
