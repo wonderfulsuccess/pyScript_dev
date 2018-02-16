@@ -7,6 +7,9 @@ from elasticsearch import Elasticsearch
 import gensim
 from gensim import corpora, models, similarities
 import pickle
+import re
+from os import listdir
+from os.path import isfile, join
 
 # 调用玻森NLP接口
 bsnlp = BosonNLP('KIFQBZJd.21708.q68ctXtgAOQj')
@@ -21,10 +24,26 @@ STOP_WORDS_PATH = "./analysis/stopwords.txt"
 
 jieba.load_userdict(DICT)
 
+# 对doc进行分词之前 过滤出中文
+p_zh = "[\u4e00-\u9fa5]"
+pattern_zh = re.compile(p_zh)
+
 def segment(text):
+    '''
+    对一段text进行分词
+    input：
+    text:待分词的原始文章
+
+    return:
+    seg:分词后的text list
+    '''
+
+    source_text = text
+    source_text = ''.join(pattern_zh.findall(source_text))
+
     stop_words=[]
     # 得到分词原始list
-    seg_list = list(jieba.cut((text), cut_all=True))
+    seg_list = list(jieba.cut((source_text), cut_all=False))
 
     # 加载停用词，转化为一个list一个词为一个项目
     with open(STOP_WORDS_PATH) as f:
@@ -42,7 +61,11 @@ def segment(text):
     return seg
 
 def words_count(seg, size=10):
-    #词频统计
+    '''
+    词频统计
+    seg:text分词后的list
+    size:需要统计的出现频率最高的数量
+    '''
     wf = Counter()  
     for i in seg:
         if i in ['\r', '\n', '\r\n']:
@@ -56,6 +79,14 @@ def words_count(seg, size=10):
 #     print(k,v)  
 
 def train_w2v_model(_index):
+    '''
+    训练一个特定ES数据库中的index类型数据
+    input:
+    _index:ES index名称
+
+    output:
+    保存训练好的词向量模型
+    '''
     index="article_"+str(_index)+"_index"
     texts=[]
     stop_words=[]
@@ -100,7 +131,11 @@ def train_w2v_model(_index):
         doc_seg=[]
         if i['_source']=={}:
             continue
-        segs=jieba.cut(i['_source'][article_text], cut_all=True)
+
+        source_text = i['_source'][article_text]
+        source_text = ''.join(pattern_zh.findall(source_text))
+
+        segs=jieba.cut(source_text, cut_all=True)
         for seg in segs:
             if seg=='':
                 continue
@@ -129,62 +164,31 @@ def train_w2v_model(_index):
 # train_w2v_model('cbnweekly')
 
 def train_w2v_model_all():
-    es = Elasticsearch()
+    '''
+    将ES中所有文章训练为一个词向量模型
+    Output:
+    训练结果保存为一个模型
+    '''
+    # 寻找 './trained_model/'目录下的所有*texts.pickle文件 组合成为一整个texts
     texts=[]
-    stop_words=[]
-    search_body={
-        "query": {
-            "match_all": {}
-        }
-    }
+    files_in_trained_model = [f for f in listdir(TRAINED_MODEL_FOLDER) if isfile(join(TRAINED_MODEL_FOLDER, f))]
+    for file_name in files_in_trained_model:
+        # 由于对每个单独的index文档都会有一个 texts pickle 去除那些带有all合并的数据
+        if ('texts.pickle' in file_name) and ('all' not in file_name):
+            print(file_name)
+            with open(TRAINED_MODEL_FOLDER+file_name, 'rb') as handle:
+                texts += pickle.load(handle)
 
-    # 第一查询获取文档总数
-    res = es.search(body=search_body)
-    total = int(res['hits']['total'])
-    print(total)
+    # 去除texts中每个text的第一个元素：每篇文章的_id，防止相似词被干扰
+    print('去除texts中每个text的第一个元素')
+    none_id_texts=[]
+    for text in texts:
+        none_id_texts.append(text[1:])
 
-    search_body={
-        "size":total,
-        "from":0,
-        "query": {
-            "match_all": {}
-        }
-    }
-    # 需要先修改ES setting max_result_window 参数 其默认为10000
-    res = es.search(body=search_body)
-    docs = res['hits']['hits']
-    print(len(docs))
+    print('无_id texts加工完毕', len(none_id_texts))
 
-    # 加载停用词，转化为一个list一个词为一个项目
-    with open('stopwords.txt') as f:
-        read = f.read()
-        stop_words = read.splitlines()
-    print("正在分词 文章总数:", len(docs))
-
-    cou=0
-    for i in docs:
-        doc_seg=[]
-        if i['_source']=={}:
-            continue
-        
-        article_text = "text"
-        if i['_type']=="cbnweekly":
-            article_text = "article_text"
-        
-        segs=jieba.cut(i['_source'][article_text],cut_all=True)
-        
-        for seg in segs:
-            if seg not in stop_words:
-                doc_seg.append(seg)
-        texts.append(doc_seg)
-        cou+=1
-        print(cou, i['_id'])
-
-    # 生成词典
-    # dictionary = corpora.Dictionary(texts)
-    # 生成词向量
-    print("正在训练词向量 文章总数:", len(docs))
-    w2v_model=gensim.models.Word2Vec(texts,size=100,window=5,min_count=1)
+    print("正在训练词向量 文章总数:", len(none_id_texts))
+    w2v_model=gensim.models.Word2Vec(none_id_texts,size=100,window=5,min_count=1)
     # for i in range(0,len(dictionary)):
     #     print(dictionary[i])
     #     print(model[dictionary[i]])
@@ -195,6 +199,9 @@ def train_w2v_model_all():
 
 
 class W2VSimilarity():
+    '''
+    计算 相似词工具对象 
+    '''
     def __init__(self):
         self.model = gensim.models.Word2Vec.load('./analysis/trained_model/all_w2v_model')
 
@@ -205,6 +212,14 @@ class W2VSimilarity():
         print(self.model.similar_by_word('学习',topn=5))
 
 def get_docs(index):
+    '''
+    根据index获取ES中的所有文档
+    input:
+    index:ES数据index
+
+    output:
+    docs该index的所有文档
+    '''
     index = 'article_'+index+'_index'
     es = Elasticsearch()
     texts=[]
@@ -219,7 +234,6 @@ def get_docs(index):
     res = es.search(index=index,body=search_body)
     total = int(res['hits']['total'])
     print(total)
-
     search_body={
         "size":total,
         "from":0,
@@ -234,6 +248,16 @@ def get_docs(index):
 
 
 def create_text(docs,index):
+    '''
+    根据一个index的文档，分词产生texts并保存
+    input:
+    docs:get_docs的返回值
+    index:主要用于是定保存输出数据的文件(模型)名
+    
+    output:
+    保存texts list pickle模型
+    '''
+
     index = 'article_'+index+'_index'
     # es = Elasticsearch()
     texts=[]
@@ -278,7 +302,10 @@ def create_text(docs,index):
         if i['_type']=="cbnweekly":
             article_text = "article_text"
         
-        segs=jieba.cut(i['_source'][article_text],cut_all=True)
+        source_text = i['_source'][article_text]
+        source_text = ''.join(pattern_zh.findall(source_text))
+
+        segs=jieba.cut(source_text,cut_all=True)
         
         for seg in segs:
             if seg=='':
@@ -446,26 +473,47 @@ class Simlarity():
         return sim_data
 
 
+def update_all_models():
+    # 读取ES中所有文档
+    duozhiwang_docs = get_docs('duozhiwang')
+    jingmeiti_docs = get_docs('jingmeiti')
+    cbnweek_docs = get_docs('cbnweek')
+    hurun_docs = get_docs('hurun')
+
+    # 训练每个文档的模型
+    create_text(docs=cbnweek_docs, index='cbnweek')
+    create_corpus('cbnweek')  
+    create_topic_model('cbnweek',10)
+    create_similarity_model('cbnweek',30)
+
+    create_text(docs=duozhiwang_docs, index='duozhiwang')
+    create_corpus('duozhiwang')  
+    create_topic_model('duozhiwang',10)
+    create_similarity_model('duozhiwang',30)
+
+    create_text(docs=jingmeiti_docs, index='jingmeiti')
+    create_corpus('jingmeiti')  
+    create_topic_model('jingmeiti',10)
+    create_similarity_model('jingmeiti',30)
+
+    create_text(docs=hurun_docs, index='hurun')
+    create_corpus('hurun')  
+    create_topic_model('hurun',10)
+    create_similarity_model('hurun',30)
+
+    # 训练所有预料的词向量 之所以放在alledu之前是为了避免排除其对应的texts pickle
+    train_w2v_model_all()
+
+    # 多知网和鲸媒体均为教育行业网站一起产生一个模型
+    alledu_docs = duozhiwang_docs+jingmeiti_docs
+    create_text(docs=alledu_docs, index='alledu')
+    create_corpus('alledu')  
+    create_topic_model('alledu',10)
+    create_similarity_model('alledu',30)
+
+
 if __name__=="__main__":
     TRAINED_MODEL_FOLDER = './trained_model/'
     STOP_WORDS_PATH = "./stopwords.txt"
-    # print('开始训练词向量模型 已有的模型即将被覆盖...')
-    # train_w2v_model_all()
 
-    # duozhiwang_docs = get_docs('duozhiwang')
-    # jingmeiti_docs = get_docs('jingmeiti')
-    # all_docs = duozhiwang_docs+jingmeiti_docs
-    # print(len(duozhiwang_docs), len(jingmeiti_docs), len(all_docs))
-    # create_text(docs=all_docs, index='all')
-    create_corpus('all')
-    create_topic_model('all',50)
-    # use_model()
-    create_similarity_model('all',30)
-    print(article_find_similarity('all',"创客教育的未来在哪儿？"))
-    '''
-    '''
-
-
-
-
-        
+    update_all_models()

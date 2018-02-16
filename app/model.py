@@ -19,7 +19,7 @@ sim={
     'duozhiwang':Simlarity('duozhiwang'),
     'jingmeiti':Simlarity('jingmeiti'),
     'hurun':Simlarity('hurun'),
-    'all':Simlarity('all'),
+    'all':Simlarity('alledu'),
 }
 
 def searchCbnWeekData(data, match_model,sort):
