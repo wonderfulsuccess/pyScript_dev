@@ -19,10 +19,11 @@ import html2text
 
 class DuozhiwangSpider(scrapy.Spider):
     name = 'duozhiwang'
-    
+    # 直接存入ES
+    data_destination = 'ES'
     def start_requests(self):
         # 指定url
-        page_deepth = input('输入更新页码深度...\n')
+        page_deepth = input(self.name+'输入更新页码深度...\n')
         for page in range(1,int(page_deepth)+1):
             yield scrapy.Request(url='http://www.duozhi.com/?page='+str(page), callback=self.parse)
 

@@ -4,6 +4,11 @@ from settings import WEB_LIST
 from analysis.nlp import Simlarity
 import arrow
 
+# logger
+import coloredlogs,logging
+lg = logging.getLogger(__name__)
+coloredlogs.install(level='DEBUG')
+
 es = Elasticsearch()
 sort_map={
         'score':'_score',
@@ -20,6 +25,7 @@ sim={
     'jingmeiti':Simlarity('jingmeiti'),
     'hurun':Simlarity('hurun'),
     'all':Simlarity('alledu'),
+    'souhujiaodian':Simlarity('souhujiaodian'),
 }
 
 def searchCbnWeekData(data, match_model,sort):
@@ -188,20 +194,6 @@ def gensimSearch(data, index, sim_type='lsi', sort='score'):
         append_data = searchIDList(i[0])
         append_data['_score'] = i[1]
         res['hits']['hits'].append(append_data)
-    # res_datatype={
-    #     'search_data':'***********',
-    #     'hits':{
-    #         'total':789,
-    #         'hits':[
-    #             {
-    #                 '_index':'***',
-    #                 '_source':{
-    #                      XXXXX
-    #                  }
-    #             }
-    #         ]
-    #     }
-    # }
     return res
     
 

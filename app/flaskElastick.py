@@ -13,6 +13,11 @@ from model import gensimSearch
 import arrow
 import markdown2
 
+# logger
+import coloredlogs,logging
+lg = logging.getLogger(__name__)
+coloredlogs.install(level='INFO')
+
 app = Flask(__name__)
 w2v = W2VSimilarity()
 
@@ -44,10 +49,11 @@ def search():
             if(website == 'all'):
                 data = searchAllData(search_data,match_model,sort)
                 return render_template('list_article.html', res=data)
-            if(website == "cbnweek"):
+            elif(website == "cbnweek"):
                 data = searchCbnWeekData(search_data, match_model,sort)
                 return render_template('list_cbnweek.html', res=data)
-            if(website in ["duozhiwang","jingmeiti","hurun"]):
+            # if(website in ["duozhiwang","jingmeiti","hurun"]):
+            else:
                 article_index = "article_"+str(website)+"_index"
                 data = searchArticleData(data=search_data, index=article_index , data_type=str(website), match_model=match_model,sort=sort)
                 return render_template('list_article.html', res=data)
@@ -68,8 +74,7 @@ def get_article():
     article = getArticle(_index=_index, _type=_type, _id=_id)
     article=article['hits']['hits'][0]['_source']
     simi_words={}
-
-    if _type in ["duozhiwang","jingmeiti","hurun"]:
+    if _type not in ["cbnweekly"]:
         article['article_title']=article['title']
         article['article_note']=article['summary']
         article['article_text']=article['text']
@@ -85,7 +90,7 @@ def get_article():
 
     data=words_count(seg,30)
     # entity=bsnlp.ner(article['article_text'])
-    # print(entity)
+    # lg.info(entity)
     for k,v in data.items():
         # 也许词典中没有统计出来的词
         try:
@@ -101,7 +106,7 @@ def get_article():
     for irar in inuse_relate_articles_res:
         t={}
         # 如果是cbnweek有需要特殊处理 :(
-        if _type in ["duozhiwang","jingmeiti","hurun"]:
+        if _type not in ["cbnweekly"]:
             t['article_title']=irar['_source']['title']
             t['article_note']=irar['_source']['summary']
             t['article_url']=irar['_source']['link']
@@ -118,8 +123,7 @@ def get_article():
         t['_score']=irar['_score']
         
         relate_article.append(t)
-    print('-'*80)
-    print(relate_article)
+    lg.info('-'*80)
 
     return render_template('article.html', article=article, data=data, simi_words=simi_words, relate=relate_article)
 

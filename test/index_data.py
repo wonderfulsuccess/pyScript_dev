@@ -1,12 +1,13 @@
-# encoding=utf-8
-import jieba
-import codecs
+# 详细设置参见文档 https://coloredlogs.readthedocs.io/en/latest/#changing-the-log-format
+# export COLOREDLOGS_LOG_FORMAT='%(asctime)s %(hostname)s %(name)s[%(process)d] %(levelname)s %(message)s'
+import coloredlogs,logging
 
-text = "学而思或者好未来的CEO在创办编程猫的初期，孙悦和李天驰开始了白天编程、晚上教书的生活，每天通过QQ给孩子们教授课程。在李天驰看来，工业时代依赖机器，而人工智能时代更依赖背后的算法，即编程"
-DICT_PATH = "/Users/claire/Elasticsearch/pyScript_dev/app/analysis/"
-DICT = DICT_PATH+'mydict.txt'
-# jieba.load_userdict('mydict.txt')
-jieba.load_userdict(DICT)
+logger = logging.getLogger(__name__)
 
-seg_list = jieba.cut(text, cut_all=True)
-print("Full Mode: " + "/ ".join(seg_list))  # 全模式
+coloredlogs.install(level='DEBUG')
+
+logger.debug("this is a debugging message")
+logger.info("this is an informational message")
+logger.warning("this is a warning message")
+logger.error("this is an error message")
+logger.critical("this is a critical message")

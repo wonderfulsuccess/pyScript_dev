@@ -6,7 +6,12 @@ import pandas as pd
 from os import listdir
 from os.path import isfile, join
 import arrow
+import codecs
 
+# logger
+import coloredlogs,logging
+lg = logging.getLogger(__name__)
+coloredlogs.install(level='DEBUG')
 
 es = Elasticsearch()
 
@@ -16,6 +21,8 @@ def indexData(mode='i'):
     # list data 目录下所有的csv文档
     csv_files = [f for f in listdir(dir_name) if isfile(join(dir_name, f))]
     for csv_file in csv_files:
+        if 'csv' not in csv_file:
+            continue
         name=csv_file.split('_')[0]
         search_body={
             "size":1,
@@ -27,7 +34,9 @@ def indexData(mode='i'):
         }
         res = es.search(body=search_body)
         # 为pandas增加表头 for_pd
+        lg.debug(csv_file)
         f = open(dir_name+csv_file,'r')
+        # f = codecs.open(dir_name+csv_file,'r')
         f.seek(0)
         header = f.readline()
         body = f.read()
@@ -48,21 +57,21 @@ def indexData(mode='i'):
                 insertArticleData(dir_name+csv_file,name)
         else:
             if mode=='i':
-                print(csv_file,'\t','文档已经存在....')
+                lg.debug(csv_file,'\t','文档已经存在....')
             elif mode=='u':
                 if name=='cbnweek':
                     inserCBNWeeklyData(dir_name+csv_file,name)
                 else:
                     insertArticleData(dir_name+csv_file,name)
             else:
-                print('未知命令...')            
+                lg.debug('未知命令...')            
 
 
 
 def inserCBNWeeklyData(csv_file,name):
     df = pd.read_csv(csv_file)
     data_length = len(df.index)
-    print('正在index:',csv_file)
+    lg.debug('正在index:',csv_file)
     for data in range(0,data_length):
 
         try:
@@ -72,7 +81,7 @@ def inserCBNWeeklyData(csv_file,name):
             article_date=article_date.replace(year=arrow.now().year)
             article_date=str(article_date)
 
-        print(csv_file,data)
+        lg.debug(csv_file,data)
         doc = {
             'csv_name':csv_file,
             'user_status':str(df.loc[data,'user_status']),
@@ -95,7 +104,7 @@ def inserCBNWeeklyData(csv_file,name):
 def insertArticleData(csv_file, name):
     df = pd.read_csv(csv_file)
     data_length = len(df.index)
-    print('正在index:',csv_file)
+    lg.debug('正在index:',csv_file)
     for data in range(0,data_length):
         try:
             date = str(arrow.get(df.loc[data,'date'],'YYYY-M-D h:m:s')) #多知网时间转化
@@ -112,7 +121,7 @@ def insertArticleData(csv_file, name):
                     date = str(arrow.get(t,'YYYY-M-D')) #鲸媒体时间转化
                 else:
                     date = str(arrow.get(df.loc[data,'crwaler_time']))
-        print(csv_file,data) 
+        lg.debug(csv_file,data) 
         doc = {
             'csv_name':csv_file,
             'the_id':str(df.loc[data,'the_id']),
@@ -145,10 +154,10 @@ def searchData(data):
     res = es.search(index="article_cbnweek_index", filter_path=['hits'], body=search_body)
     for hit in res['hits']['hits']:
         counter+=1
-        # print("\n"+str(counter)+"#####"+str(hit["_source"]["magazine_date"]))
-        # print("%(article_title)s\n%(magazine_no)s\n%(article_page_url)s" % hit["_source"])
-        print("%(article_title)s" % hit["_source"])
-    print("搜索到 %d Hits:" % res['hits']['total'])
+        # lg.debug("\n"+str(counter)+"#####"+str(hit["_source"]["magazine_date"]))
+        # lg.debug("%(article_title)s\n%(magazine_no)s\n%(article_page_url)s" % hit["_source"])
+        lg.debug("%(article_title)s" % hit["_source"])
+    lg.debug("搜索到 %d Hits:" % res['hits']['total'])
 
 if __name__=="__main__":
     indexData(input('输入命令...\n'))

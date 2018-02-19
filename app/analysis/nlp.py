@@ -9,7 +9,16 @@ from gensim import corpora, models, similarities
 import pickle
 import re
 from os import listdir
+from os import system
 from os.path import isfile, join
+from math import ceil
+import arrow
+import gc
+
+# logger
+import coloredlogs,logging
+lg = logging.getLogger(__name__)
+coloredlogs.install(level='INFO')
 
 # 调用玻森NLP接口
 bsnlp = BosonNLP('KIFQBZJd.21708.q68ctXtgAOQj')
@@ -206,6 +215,7 @@ class W2VSimilarity():
         self.model = gensim.models.Word2Vec.load('./analysis/trained_model/all_w2v_model')
 
     def simi_words(self,word):
+        lg.info('计算相似词')
         return self.model.similar_by_word(str(word),topn=5)
 
     def test(self):
@@ -221,7 +231,7 @@ def get_docs(index):
     docs该index的所有文档
     '''
     index = 'article_'+index+'_index'
-    es = Elasticsearch()
+    es = Elasticsearch(timeout=120)
     texts=[]
     stop_words=[]
     search_body={
@@ -234,16 +244,37 @@ def get_docs(index):
     res = es.search(index=index,body=search_body)
     total = int(res['hits']['total'])
     print(total)
-    search_body={
-        "size":total,
-        "from":0,
-        "query": {
-            "match_all": {}
+    docs=[]
+    # 如果文章总数大于50000则分批从es中提取文档 每批50000
+    if total<=50000:
+        search_body={
+            "size":total,
+            "from":0,
+            "query": {
+                "match_all": {}
+            }
         }
-    }
-    # 需要先修改ES setting max_result_window 参数 其默认为10000
-    res = es.search(index=index,body=search_body)
-    docs = res['hits']['hits']
+        # 需要先修改ES setting max_result_window 参数 其默认为10000
+        res = es.search(index=index,body=search_body)
+        docs = res['hits']['hits']
+    
+    else:
+        this_total = 50000
+        get_loop = ceil(total/50000)
+        for i in range(get_loop):
+            if i==get_loop-1:
+                this_total=total-(50000*i)
+            search_body={
+                "size":this_total,
+                "from":50000*i,
+                "query": {
+                "match_all": {}
+                }
+            }
+            docs += es.search(index=index,body=search_body)['hits']['hits']
+
+    print('-'*80)
+    print(len(docs))
     return docs
 
 
@@ -259,31 +290,7 @@ def create_text(docs,index):
     '''
 
     index = 'article_'+index+'_index'
-    # es = Elasticsearch()
     texts=[]
-    # stop_words=[]
-    # search_body={
-    #     "query": {
-    #         "match_all": {}
-    #     }
-    # }
-
-    # # 第一查询获取文档总数
-    # res = es.search(index=index,body=search_body)
-    # total = int(res['hits']['total'])
-    # print(total)
-
-    # search_body={
-    #     "size":total,
-    #     "from":0,
-    #     "query": {
-    #         "match_all": {}
-    #     }
-    # }
-    # # 需要先修改ES setting max_result_window 参数 其默认为10000
-    # res = es.search(index=index,body=search_body)
-    # docs = res['hits']['hits']
-    # print(len(docs))
 
     # 加载停用词，转化为一个list一个词为一个项目
     with open('stopwords.txt') as f:
@@ -321,14 +328,24 @@ def create_text(docs,index):
     with open(pcikle_name, 'wb') as handle:
         pickle.dump(texts, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
-    # load pickle
-    with open(pcikle_name, 'rb') as handle:
-        texts = pickle.load(handle)
-        print(len(texts))
+    pcikle_index_name = TRAINED_MODEL_FOLDER+index.split('_')[1]+'_texts_index'+'.pickle'
+    # save texts_index[] 存储texts中每个list的第一个元素 也就是_id 这样能加快寻找相似文章的模块加载速度
+    texts_index=[]
+    for text in texts:
+        texts_index.append(text[:1])
+
+    with open(pcikle_index_name, 'wb') as handle:
+        pickle.dump(texts_index, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+    # load pickle for a test
+    # with open(pcikle_name, 'rb') as handle:
+        # texts = pickle.load(handle)
+        # print(len(texts))
 
 
 def create_corpus(texts_pickle):
     texts=[]
+    print('打开pickle',texts_pickle)    
     with open(TRAINED_MODEL_FOLDER+texts_pickle+'_texts'+'.pickle', 'rb') as handle:
         texts = pickle.load(handle)
         print(len(texts))
@@ -337,7 +354,7 @@ def create_corpus(texts_pickle):
 
     print('生成词典',model_name+'.dict')
     dictionary = corpora.Dictionary(texts)
-    print('保存词典',model_name+'.dict')
+    print('保存词典 ',model_name+'.dict')
     dictionary.save(model_name+'.dict')
     print("词典总词数为:", len(dictionary))
     
@@ -410,15 +427,15 @@ def article_find_similarity(index, article):
         texts = pickle.load(handle)
     # 1.分词
     article_seg = segment(article)
-    print(article_seg)
+    lg.info(article_seg)
     # 2.根据生成的词典转化为bow向量
-    print('词向量转化')
+    lg.info('词向量转化')
     article_corpus = dictionary.doc2bow(article_seg)
     # 3.计算article的词tfidf
-    print('计算tfidf')
+    lg.info('计算tfidf')
     article_corpus_tfidf = tfidf_model[article_corpus]
     # 4.计算LSI主题模型
-    print('寻找相似文章')
+    lg.info('寻找相似文章')
     article_corpus_lsi = lsi_model[article_corpus_tfidf]
 
     # print("-"*40)
@@ -437,80 +454,130 @@ def article_find_similarity(index, article):
 class Simlarity():
     """docstring for Simlarity"""
     def __init__(self, index):
+        print('-'*20, str(arrow.now()),'-'*20)
         self.index = TRAINED_MODEL_FOLDER+index
         self.dictionary = corpora.Dictionary.load(self.index+'.dict')
         self.lsi_model = models.LsiModel.load(self.index+'_model.lsi')
         self.tfidf_model = models.TfidfModel.load(self.index+'.tfidf')
         self.similarity_lsi=similarities.Similarity.load(self.index+'_model_lsi.simi')
 
+        self.texts_index = []
+        # 该加载过程有些耗费时间 决定将其放在初始化构造函数之中
+        lg.info('准备加载texts index pickle'+self.index)
+        with open(self.index+'_texts_index'+'.pickle', 'rb') as handle:
+            self.texts_index = pickle.load(handle)
+        lg.info('加载texts index pickle 完成'+self.index)
     def article_find_similarity(self, article):
-        texts = []
-        with open(self.index+'_texts'+'.pickle', 'rb') as handle:
-            texts = pickle.load(handle)
         # 1.分词
         article_seg = segment(article)
-        print(article_seg)
         # 2.根据生成的词典转化为bow向量
-        print('词向量转化')
+        lg.info('词向量转化')
         article_corpus = self.dictionary.doc2bow(article_seg)
         # 3.计算article的词tfidf
-        print('计算tfidf')
+        lg.info('计算tfidf')
         article_corpus_tfidf = self.tfidf_model[article_corpus]
         # 4.计算LSI主题模型
-        print('寻找相似文章')
+        lg.info('寻找相似文章')
         article_corpus_lsi = self.lsi_model[article_corpus_tfidf]
-
-        print("-"*40)
         sims = self.similarity_lsi[article_corpus_lsi]
         sim_data=[]
         print(sim_data)
         for sim in sims:
             # print(sim[1])
             t=[]
-            t.append(texts[sim[0]][0])
+            t.append(self.texts_index[sim[0]][0])
             t.append(sim[1])
             sim_data.append(t)
         return sim_data
 
 
 def update_all_models():
-    # 读取ES中所有文档
-    duozhiwang_docs = get_docs('duozhiwang')
-    jingmeiti_docs = get_docs('jingmeiti')
-    cbnweek_docs = get_docs('cbnweek')
-    hurun_docs = get_docs('hurun')
 
+    lg.warning('删除所有训练模型...')
+    system('rm -f ./trained_model/*')
+    system('rm -f ../trained_model/*')
+    lg.warning('删除训练模型完成')
     # 训练每个文档的模型
+
+    # 读取ES中所有文档
+    cbnweek_docs = get_docs('cbnweek')
     create_text(docs=cbnweek_docs, index='cbnweek')
+    del(cbnweek_docs)
+    gc.collect()
     create_corpus('cbnweek')  
     create_topic_model('cbnweek',10)
     create_similarity_model('cbnweek',30)
 
+    # 读取ES中所有文档
+    duozhiwang_docs = get_docs('duozhiwang')
     create_text(docs=duozhiwang_docs, index='duozhiwang')
     create_corpus('duozhiwang')  
     create_topic_model('duozhiwang',10)
     create_similarity_model('duozhiwang',30)
 
+    jingmeiti_docs = get_docs('jingmeiti')
     create_text(docs=jingmeiti_docs, index='jingmeiti')
     create_corpus('jingmeiti')  
     create_topic_model('jingmeiti',10)
     create_similarity_model('jingmeiti',30)
 
-    create_text(docs=hurun_docs, index='hurun')
-    create_corpus('hurun')  
-    create_topic_model('hurun',10)
-    create_similarity_model('hurun',30)
-
-    # 训练所有预料的词向量 之所以放在alledu之前是为了避免排除其对应的texts pickle
-    train_w2v_model_all()
-
-    # 多知网和鲸媒体均为教育行业网站一起产生一个模型
+    # 多知网和鲸媒体均为教育行业网站一起产生一个模型 特别关注教育行业 :)
     alledu_docs = duozhiwang_docs+jingmeiti_docs
+    del(duozhiwang_docs)
+    del(jingmeiti_docs)
+    gc.collect()
     create_text(docs=alledu_docs, index='alledu')
+    del(alledu_docs)
+    gc.collect()
     create_corpus('alledu')  
     create_topic_model('alledu',10)
     create_similarity_model('alledu',30)
 
+    hurun_docs = get_docs('hurun')
+    create_text(docs=hurun_docs, index='hurun')
+    del(hurun_docs)
+    gc.collect()
+    create_corpus('hurun')  
+    create_topic_model('hurun',10)
+    create_similarity_model('hurun',30)
+    
+
+    souhujiaodian_docs = get_docs('souhujiaodian')
+    create_text(docs=souhujiaodian_docs, index='souhujiaodian')
+    del(souhujiaodian_docs)
+    gc.collect()
+    create_corpus('souhujiaodian')  
+    create_topic_model('souhujiaodian',10)
+    create_similarity_model('souhujiaodian',60)
+
+    # 训练所有预料的词向量 之所以放在alledu之前是为了避免排除其对应的texts pickle
+    train_w2v_model_all()
+
+    lg.info("copy similarity model to app/trained_model/")
+    system('cp ./trained_model/*-LSI-index.* ../trained_model/')
+
+def create_texts_index(texts_pickle):
+    '''
+    此前有一些texts pickle文档没有生成 texts index pickle 通过该函数生成并保存
+    此函数的功能已经在生成texts时已经添加 顾以后该函数基本上用不到
+    '''
+    texts=[]
+    lg.info('打开pickle'+texts_pickle)
+    with open(TRAINED_MODEL_FOLDER+texts_pickle+'_texts'+'.pickle', 'rb') as handle:
+        texts = pickle.load(handle)
+        print(len(texts))
+
+    lg.info('打开pickle完成'+texts_pickle)
+    pcikle_index_name = TRAINED_MODEL_FOLDER+texts_pickle+'_texts_index'+'.pickle'
+
+    lg.info('生成 texts index'+texts_pickle)
+    texts_index=[]
+    for text in texts:
+        texts_index.append(text[:1])
+    lg.info(len(texts_index))
+    with open(pcikle_index_name, 'wb') as handle:
+        pickle.dump(texts_index, handle, protocol=pickle.HIGHEST_PROTOCOL)
+    lg.info('保存 texts index'+texts_pickle)
 
 if __name__=="__main__":
     TRAINED_MODEL_FOLDER = './trained_model/'

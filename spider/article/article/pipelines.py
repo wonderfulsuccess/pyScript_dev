@@ -9,6 +9,7 @@ import codecs
 import json
 import arrow
 from article.settings import DATA_DESTION_PATH
+from article.estools import indexArticleDoc
 
 
 # 所有在settings中制定的 pipeline都会被每一个item 撸一遍
@@ -23,15 +24,26 @@ class ArticlePipeline(object):
         # 如果是cnbweek spider直接返回
         if spider.name == 'cbnweek':
             return
-        the_time = arrow.now()
-        the_date = str(the_time.format('YYYYMMDD'))
-        csv_name = spider.name+'_data_article'+the_date+'.csv'
-        self.file = codecs.open(DATA_DESTION_PATH+csv_name,'w',encoding='utf-8')
+        # 将爬取的文章存入csv文档
+        if spider.data_destination == 'CSV':
+            the_time = arrow.now()
+            the_date = str(the_time.format('YYYYMMDD'))
+            csv_name = spider.name+'_data_article'+the_date+'.csv'
+            self.file = codecs.open(DATA_DESTION_PATH+csv_name,'w',encoding='utf-8')
+        
+        # 将爬取的文章直接存入ES
+        elif spider.data_destination == 'ES':
+            pass
+
         # 统计总数
         self.counter = 0
-        self.file.seek(0)
-        data_line = "the_id,website,title,link,summary,category,date,author,text,crwaler_time,other,for_pd\n"
-        self.file.writelines(data_line)
+
+        if spider.data_destination == 'CSV':
+            self.file.seek(0)
+            data_line = "the_id,website,title,link,summary,category,date,author,text,crwaler_time,other,for_pd\n"
+            self.file.writelines(data_line)
+        elif spider.data_destination == 'ES':
+            pass
 
     def process_item(self, item, spider):
         if spider.name == 'cbnweek':
@@ -40,15 +52,24 @@ class ArticlePipeline(object):
         self.counter += 1
         item["the_id"] = self.counter
         item["crwaler_time"] = str(arrow.now())
-        data_line = str(item["the_id"])+','+str(item["website"])+','+str(item["title"])+','+str(item["link"])+','+str(item["summary"])+','+str(item["category"])+','+str(item["date"])+','+str(item["author"])+','+str(item["text"])+','+str(item["crwaler_time"])+','+str(item["other"])+','+'\n'
-        self.file.writelines(data_line)
+        
+        if spider.data_destination == 'CSV':
+            data_line = str(item["the_id"])+','+str(item["website"])+','+str(item["title"])+','+str(item["link"])+','+str(item["summary"])+','+str(item["category"])+','+str(item["date"])+','+str(item["author"])+','+str(item["text"])+','+str(item["crwaler_time"])+','+str(item["other"])+','+'\n'
+            self.file.writelines(data_line)
+        elif spider.data_destination == 'ES':
+            indexArticleDoc(index=spider.name, item=item)
+
         return item
 
     def close_spider(self, spider):
         if spider.name == 'cbnweek':
             return
-        # 结束保存csv文件
-        self.file.close()
+        if spider.data_destination == 'CSV':
+            # 结束保存csv文件
+            self.file.close()
+        elif spider.data_destination == 'ES':
+            pass
+
 
 
 class savecbnweekData(object):

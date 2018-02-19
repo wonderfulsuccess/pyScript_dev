@@ -22,6 +22,7 @@
                     <div class="w3-row w3-container">
                         <h4 class="w3-light-blue"><a target="_blank" href='{{ hit["_source"]["link"] }}' style="text-decoration:none">{{ hit["_source"]["title"] }}</a></h4>
                         <p>
+                            <span class="w3-text-red">{{ hit["_source"]["website"]}}</span>
                             {{ hit["_source"]["date"] }}
                             排名得分：{{ hit["_score"] }}
                         </p>

@@ -3,4 +3,5 @@ WEB_LIST={
     'duozhiwang':'多知网',
     'jingmeiti':'鲸媒体',
     'hurun':'胡润百富',
+    'souhujiaodian':'搜狐焦点',
 }

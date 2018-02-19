@@ -22,6 +22,7 @@ import html2text
 
 class HrunSpider(scrapy.Spider):
     name = 'hurun'
+    data_destination = 'ES'
     url_pages_dic={}
 
     the_domin = 'http://www.hurun.net'
