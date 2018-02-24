@@ -1,5 +1,6 @@
 *.csv
 *.pyc
+*.log
 app/analysis/trained_model/*
 app/trained_model/*
 __pycache__
