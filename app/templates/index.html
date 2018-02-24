@@ -15,44 +15,44 @@
     <div class="w3-panel w3-padding-32">
         <form class="w3-container w3-card-4" action="/" method="post">
             <p>
-                <input class="w3-xxxlarge w3-text-orange w3-input w3-animate-input" name="keywords" type="text" placeholder="输入搜索..." style="width:50%">
+                <input class="w3-xxxlarge w3-text-orange w3-input w3-animate-input" name="keywords" type="text" placeholder="输入搜索AII..." style="width:50%">
             </p>
             <div class="w3-cell-row">
-                <div class="w3-card-4 w3-container w3-pale-blue w3-cell">
-                    <p>
+                <div class="w3-card-4 w3-third w3-container w3-pale-blue w3-cell" style="height: 200px">
+                    <span>
                         <input class="w3-radio" type="radio" name="website" value='all' checked>
-                        <label>全部Article(智能模式仅教育)</label>
-                    </p>
+                        <label>全部Article(无智能模式)</label>
+                    </span>
                     {% for web in data.keys() %}
-                    <p>
+                    <span>
                         <input class="w3-radio" type="radio" name="website" value={{web}}>
                         <label>{{data[web]}}</label>
-                    </p>
+                    </span>
                     {% endfor %}
                 </div>
-                <div class="w3-card-4 w3-container w3-pale-green w3-cell">
-                    <p>
+                <div class="w3-card-4 w3-third w3-container w3-pale-green w3-cell" style="height: 200px">
+                    <span>
                         <input class="w3-radio" type="radio" name="match_model" value='match_phrase' checked>
                         <label>短语模式 尽量少</label>
-                    </p>
-                    <p>
+                    </span>
+                    <span>
                         <input class="w3-radio" type="radio" name="match_model" value='match'>
                         <label>分词模式 尽量多</label>
-                    </p>
-                    <p>
+                    </span>
+                    <span>
                         <input class="w3-radio" type="radio" name="match_model" value='lsi'>
                         <label>LSI 智能模式</label>
-                    </p>
+                    </span>
                 </div>
-                <div class="w3-card-4 w3-container w3-pale-red w3-cell">
-                    <p>
+                <div class="w3-card-4 w3-third w3-container w3-pale-red w3-cell" style="height: 200px">
+                    <span>
                         <input class="w3-radio" type="radio" name="sort_model" value='score' checked>
                         <label>相关度</label>
-                    </p>
-                    <p>
+                    </span>
+                    <span>
                         <input class="w3-radio" type="radio" name="sort_model" value='date'>
                         <label>发布日期</label>
-                    </p>
+                    </span>
                 </div>
             </div>
             <p>
@@ -62,7 +62,7 @@
     </div>
     <div class="w3-container">
         <button class="w3-margin w3-round w3-button w3-red"><a target="_blank" style="text-decoration: none" href="/cbnweek">洞察一财</a></button>
-        <button class="w3-margin w3-round w3-button w3-pink">Pink</button>
+        <button class="w3-margin w3-round w3-button w3-pink"><a target="_blank" style="text-decoration: none" href="/update?deepth=10">更新Article</a></button>
         <button class="w3-margin w3-round w3-button w3-purple">Purple</button>
         <button class="w3-margin w3-round w3-button w3-deep-purple">Deep Purple</button>
         <button class="w3-margin w3-round w3-button w3-indigo">Indigo</button>

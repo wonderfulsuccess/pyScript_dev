@@ -20,12 +20,17 @@ cbnweek_sort_map={
         }
 # 主题相似性有多个文档集合匹配模型 需要一一定义
 sim={
+    # 'all':Simlarity('all'),
     'cbnweek':Simlarity('cbnweek'),
+    'hurun':Simlarity('hurun'),
+    'edu':Simlarity('edu'),
     'duozhiwang':Simlarity('duozhiwang'),
     'jingmeiti':Simlarity('jingmeiti'),
-    'hurun':Simlarity('hurun'),
-    'all':Simlarity('alledu'),
+    'fudaoquan':Simlarity('fudaoquan'),
+    'jiemodui':Simlarity('jiemodui'),
+    'realestate':Simlarity('realestate'),
     'souhujiaodian':Simlarity('souhujiaodian'),
+    'guandian':Simlarity('guandian'),
 }
 
 def searchCbnWeekData(data, match_model,sort):
@@ -82,6 +87,9 @@ def searchArticleData(data, index, data_type, match_model, sort):
         }
     }
 
+    if data=='':
+        search_body['query']={"match_all":{}}
+
     res = es.search(index=index, doc_type=data_type, body=search_body)
     res["search_data"]=data
     return res
@@ -109,6 +117,8 @@ def searchAllData(data, match_model, sort):
             }
         }
     }
+    if data=='':
+        search_body['query']={"match_all":{}}
     res = es.search(body=search_body)
     res["search_data"]=data
     return res

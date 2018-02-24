@@ -4,19 +4,7 @@ import re
 import scrapy
 from article.items import ArticleItem
 import html2text
-
-
-# item["he_id"]
-# item["ebsite"]
-# item["itle"]
-# item["ink"]
-# item["ummary"]
-# item["ategory"]
-# item["ate"]
-# item["uthor"]
-# item["ext"]
-# item["rwaler_time"]
-# item["ther"]
+from article.settings import UPDATE_DEEPTH as page_deepth
 
 class JingmeitiSpider(scrapy.Spider):
     name = 'jingmeiti'
@@ -27,7 +15,8 @@ class JingmeitiSpider(scrapy.Spider):
 
     def start_requests(self):
         # 指定url
-        page_deepth = input(self.name+'输入更新页码深度...\n')
+        # page_deepth = input(self.name+'输入更新页码深度...\n')
+        # page_deepth = 10
         for page in range(1,int(page_deepth)+1):
             yield scrapy.Request(url='http://www.jingmeiti.com/page/'+str(page), callback=self.parse)
 

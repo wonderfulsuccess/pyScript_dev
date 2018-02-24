@@ -1,7 +1,25 @@
 WEB_LIST={
     'cbnweek':'第一财经周刊',
+    'hurun':'胡润百富',
+    'edu':'教育(行业搜索)',
     'duozhiwang':'多知网',
     'jingmeiti':'鲸媒体',
-    'hurun':'胡润百富',
+    'fudaoquan':'辅导圈',
+    'jiemodui':'芥末堆',
+    'realestate':'地产(行业搜索)',
     'souhujiaodian':'搜狐焦点',
+    'guandian':'观点地产'
+}
+
+INDUSTRY_INDEX={
+    'edu':[
+        'article_duozhiwang_index',
+        'article_jingmeiti_index',
+        'article_fudaoquan_index',
+        'article_jiemodui_index',
+    ],
+    'realestate':[
+        'article_souhujiaodian_index',
+        'article_guandian_index',
+    ],
 }

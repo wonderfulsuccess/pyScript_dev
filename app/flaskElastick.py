@@ -1,5 +1,6 @@
 from flask import Flask, request, session, g, redirect, url_for, abort, render_template, flash, Markup
 from settings import WEB_LIST
+from settings import INDUSTRY_INDEX
 from analysis.nlp import segment
 from analysis.nlp import words_count
 from analysis.nlp import W2VSimilarity
@@ -12,11 +13,12 @@ from model import getcbnweekData
 from model import gensimSearch
 import arrow
 import markdown2
+import os
 
 # logger
 import coloredlogs,logging
 lg = logging.getLogger(__name__)
-coloredlogs.install(level='INFO')
+coloredlogs.install(level='error')
 
 app = Flask(__name__)
 w2v = W2VSimilarity()
@@ -41,22 +43,30 @@ def search():
         if match_model in ['lsi','lds','tfidf']:
             res = gensimSearch(data=search_data, index=website)
             if website=="cbnweek":
-                return render_template('list_cbnweek.html', res=res)
+                return render_template('list_cbnweek.html', cat=website,res=res)
             else:
-                return render_template('list_article.html', res=res)
+                return render_template('list_article.html', cat=website, res=res)
 
         else:
-            if(website == 'all'):
+            # 搜索所有的资料
+            if website == 'all' :
                 data = searchAllData(search_data,match_model,sort)
-                return render_template('list_article.html', res=data)
-            elif(website == "cbnweek"):
+                return render_template('list_article.html', cat=website, res=data)
+            # 搜索第一财经周刊
+            elif website == "cbnweek" :
                 data = searchCbnWeekData(search_data, match_model,sort)
-                return render_template('list_cbnweek.html', res=data)
+                return render_template('list_cbnweek.html', cat=website,res=data)
             # if(website in ["duozhiwang","jingmeiti","hurun"]):
+            # 搜索行业
+            elif website in ['edu', 'realestate']:
+                article_index = INDUSTRY_INDEX[website]
+                data = searchArticleData(data=search_data, index=article_index , data_type='', match_model=match_model,sort=sort)
+                return render_template('list_article.html', cat=website, res=data)
+            # 搜索单个网站
             else:
                 article_index = "article_"+str(website)+"_index"
                 data = searchArticleData(data=search_data, index=article_index , data_type=str(website), match_model=match_model,sort=sort)
-                return render_template('list_article.html', res=data)
+                return render_template('list_article.html', cat=website, res=data)
     else:
         return render_template('index.html', data=WEB_LIST)
     
@@ -71,6 +81,8 @@ def get_article():
     _id = request.args.get('id')
     _index = request.args.get('index')
     _type = request.args.get('type')
+    _cat = request.args.get('cat')
+    # lg.critical(_cat)
     article = getArticle(_index=_index, _type=_type, _id=_id)
     article=article['hits']['hits'][0]['_source']
     simi_words={}
@@ -99,7 +111,10 @@ def get_article():
             simi_words[k] = list(range(len(data.items())))
 
     # 请注意这里的index为 article_duozhiwang_index格式 需要转化为duozhiwang格式
-    relate_articles_res = gensimSearch(data=article['article_text'], index=_index.split('_')[1])
+    # 如果是通过all通道进入AII 去除行业分类保持网站级别分类进行文章关联
+    if _cat == 'all':
+        _cat =_index.split('_')[1]
+    relate_articles_res = gensimSearch(data=article['article_text'], index=_cat)
     # 需要针对cbnweek和article的不同格式进行格式转化
     inuse_relate_articles_res = relate_articles_res['hits']['hits']
     relate_article=[]
@@ -121,7 +136,7 @@ def get_article():
         t['_index']=irar['_index']
         t['_type']=irar['_type']
         t['_score']=irar['_score']
-        
+        t['cat']=_cat
         relate_article.append(t)
     lg.info('-'*80)
 
@@ -138,5 +153,12 @@ def show_cbnweek():
 def show_magazine_articles():
     magazine_url = request.args.get('url')
     data = searchCbnWeekData(magazine_url, 'match_phrase','date')
-    return render_template('list_cbnweek.html', res=data)
+    return render_template('list_cbnweek.html', cat='cbnweek',res=data)
 
+
+@app.route('/update')
+def update_article():
+    deepth = request.args.get('deepth')
+    os.system('./update.sh')
+    # os.system('ls -l')
+    return "更新完毕！"

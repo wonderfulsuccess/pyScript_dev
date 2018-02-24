@@ -20,13 +20,14 @@
             <h3 class="w3-green">关联文章</h3>
             {% for r in relate %}
             <div class="w3-container w3-third">
-                <div class="we-card-4 w3-light-grey"  style="height: 200px">
+                <div class="we-card-4 w3-light-grey"  style="height: 220px">
                     <p class="w3-text-orange">
                         <a  style="text-decoration: none" href="{{ r['article_url'] }}">标题: {{r['article_title']}}</a>
                     </p>
-                    <p class="w3-text-red">日期: {{r['article_date']}} -- 相关度: {{r['_score']}}</p>
+                    <p class="w3-text-red">日期: {{r['article_date']}} -- 相关度: {{r['_score']}} </p>
+                    <p class="w3-text-green">来源: {{r['_index']}}</p>
                     <p>
-                        <a target="_blank" style="text-decoration: none" href="/article?id={{ r['_id'] }}&index={{r['_index']}}&type={{r['_type']}}">摘要: {{r['article_note']}}</a>
+                        <a target="_blank" style="text-decoration: none" href="/article?cat={{ r['cat'] }}&id={{ r['_id'] }}&index={{r['_index']}}&type={{r['_type']}}">摘要: {{r['article_note']}}</a>
                     </p>
                 </div>
             </div>

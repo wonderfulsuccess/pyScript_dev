@@ -5,6 +5,8 @@ from article.items import ArticleItem
 import html2text
 from article.tools import remove_csv_noise
 
+from article.settings import UPDATE_DEEPTH as page_deepth
+
 class SouhujiaodianSpider(scrapy.Spider):
     name = 'souhujiaodian'
     data_destination = 'ES'
@@ -23,11 +25,9 @@ class SouhujiaodianSpider(scrapy.Spider):
     
     def start_requests(self):
         # 指定url
-        if self.spider_mode == 'U':
-                update_deepth=input(self.name+'输入更新页码深度...\n')
         for city in self.cities:
             if self.spider_mode == 'U':
-                self.cities[city][1]=int(update_deepth)
+                self.cities[city][1]=int(page_deepth)
             for page in range(1,self.cities[city][1]+1):
                 meta_data = {
                     'city':self.cities[city][0],

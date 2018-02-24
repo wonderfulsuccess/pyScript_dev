@@ -10,6 +10,7 @@ from scrapy import signals
 import random
 from article.settings import IPPOOL
 from scrapy.downloadermiddlewares.httpproxy import HttpProxyMiddleware
+import requests
 
 
 class IPPOOLS(HttpProxyMiddleware):
@@ -18,9 +19,12 @@ class IPPOOLS(HttpProxyMiddleware):
         self.ip = ip
 
     def process_request(self, request, spider):
-        thisip = random.choice(IPPOOL)
+        # thisip = random.choice(IPPOOL)
+        thisip = requests.get("http://api.ip.data5u.com/dynamic/get.html?order=5135da4a4ce8e4a4848474ab8c3d7a79&sep=3").text
         # print('当前的IP是：'+thisip['ipaddr'])
-        request.meta['proxy']="http://"+thisip['ipaddr']
+        print('-'*40,'当前的IP是：'+thisip)
+        # request.meta['proxy']="http://"+thisip['ipaddr']
+        request.meta['proxy']="http://"+thisip
 
 
 class ArticleSpiderMiddleware(object):

@@ -18,10 +18,10 @@ import gc
 # logger
 import coloredlogs,logging
 lg = logging.getLogger(__name__)
-coloredlogs.install(level='INFO')
+coloredlogs.install(level='error')
 
 # 调用玻森NLP接口
-bsnlp = BosonNLP('KIFQBZJd.21708.q68ctXtgAOQj')
+# bsnlp = BosonNLP('KIFQBZJd.21708.q68ctXtgAOQj')
 # 卡其jieba并行分词 速度似乎没变化 :(
 jieba.enable_parallel(4)
 DICT_PATH = "/Users/claire/Elasticsearch/pyScript_dev/app/analysis/"
@@ -32,6 +32,7 @@ TRAINED_MODEL_FOLDER = './analysis/trained_model/'
 STOP_WORDS_PATH = "./analysis/stopwords.txt"
 
 jieba.load_userdict(DICT)
+jieba.enable_parallel()
 
 # 对doc进行分词之前 过滤出中文
 p_zh = "[\u4e00-\u9fa5]"
@@ -144,7 +145,7 @@ def train_w2v_model(_index):
         source_text = i['_source'][article_text]
         source_text = ''.join(pattern_zh.findall(source_text))
 
-        segs=jieba.cut(source_text, cut_all=True)
+        segs=jieba.cut(source_text, cut_all=False)
         for seg in segs:
             if seg=='':
                 continue
@@ -183,7 +184,7 @@ def train_w2v_model_all():
     files_in_trained_model = [f for f in listdir(TRAINED_MODEL_FOLDER) if isfile(join(TRAINED_MODEL_FOLDER, f))]
     for file_name in files_in_trained_model:
         # 由于对每个单独的index文档都会有一个 texts pickle 去除那些带有all合并的数据
-        if ('texts.pickle' in file_name) and ('all' not in file_name):
+        if ('texts.pickle' in file_name) and (file_name.split('_')[0] in ['cbnweek','hurun','duozhiwang','jingmeiti','fudaoquan','souhujiaodian','guandian']):
             print(file_name)
             with open(TRAINED_MODEL_FOLDER+file_name, 'rb') as handle:
                 texts += pickle.load(handle)
@@ -215,7 +216,7 @@ class W2VSimilarity():
         self.model = gensim.models.Word2Vec.load('./analysis/trained_model/all_w2v_model')
 
     def simi_words(self,word):
-        lg.info('计算相似词')
+        # lg.info('计算相似词')
         return self.model.similar_by_word(str(word),topn=5)
 
     def test(self):
@@ -312,7 +313,7 @@ def create_text(docs,index):
         source_text = i['_source'][article_text]
         source_text = ''.join(pattern_zh.findall(source_text))
 
-        segs=jieba.cut(source_text,cut_all=True)
+        segs=jieba.cut(source_text,cut_all=False)
         
         for seg in segs:
             if seg=='':
@@ -342,6 +343,35 @@ def create_text(docs,index):
         # texts = pickle.load(handle)
         # print(len(texts))
 
+def combine_text(text_list,text_name):
+    '''
+    事实证明分词是一个很耗时间的工作，因此决定保存每一个分词过的index
+    遇到需要合并多个index text则直接从保存的text pickle中读取拼接再保存即可
+    '''
+    text_list_pickle=[]
+    texts=[]
+    for tl in text_list:
+        text_list_pickle.append(tl+'_texts.pickle')
+
+    for tlp in text_list_pickle:
+        with open(TRAINED_MODEL_FOLDER+tlp, 'rb') as handle:
+            texts += pickle.load(handle)
+    print(str(text_list),'连接之后的texts长度为:' ,len(texts))
+    lg.info('保存合并的texts中...')
+
+    with open(TRAINED_MODEL_FOLDER+text_name+'_texts.pickle', 'wb') as handle:
+        pickle.dump(texts, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+    pcikle_index_name = TRAINED_MODEL_FOLDER+text_name+'_texts_index'+'.pickle'
+    # save texts_index[] 存储texts中每个list的第一个元素 也就是_id 这样能加快寻找相似文章的模块加载速度
+    texts_index=[]
+    for text in texts:
+        texts_index.append(text[:1])
+
+    with open(pcikle_index_name, 'wb') as handle:
+        pickle.dump(texts_index, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+    lg.info('保存合并的texts成功:'+text_name+'_texts.pickle')
 
 def create_corpus(texts_pickle):
     texts=[]
@@ -491,64 +521,55 @@ class Simlarity():
         return sim_data
 
 
-def update_all_models():
+def create_index_models(index,ts=10,ss=30):
+    '''
+    创建单个网站的主题模型和相似性模型
+    '''
+    docs_name = index+'_docs'
+    docs_name = get_docs(index)
+    create_text(docs=docs_name, index=index)
+    del(docs_name)
+    gc.collect()
+    create_corpus(index)  
+    create_topic_model(index,ts)
+    create_similarity_model(index,ss)
 
+
+def create_industry_models(industry,ts=10,ss=60):
+    '''
+    创建一个行业的所有主题模型和相似性模型
+    '''
+    combine_text(text_list=industry['index'],text_name=industry['name'])
+    create_corpus(industry['name'])
+    create_topic_model(industry['name'],10)
+    create_similarity_model(industry['name'],30)
+
+def update_all_models():
+    delete_sure = input('你确定要删除所有模型吗？')
+    if delete_sure != 'yes':
+        return
     lg.warning('删除所有训练模型...')
     system('rm -f ./trained_model/*')
     system('rm -f ../trained_model/*')
     lg.warning('删除训练模型完成')
-    # 训练每个文档的模型
-
-    # 读取ES中所有文档
-    cbnweek_docs = get_docs('cbnweek')
-    create_text(docs=cbnweek_docs, index='cbnweek')
-    del(cbnweek_docs)
-    gc.collect()
-    create_corpus('cbnweek')  
-    create_topic_model('cbnweek',10)
-    create_similarity_model('cbnweek',30)
-
-    # 读取ES中所有文档
-    duozhiwang_docs = get_docs('duozhiwang')
-    create_text(docs=duozhiwang_docs, index='duozhiwang')
-    create_corpus('duozhiwang')  
-    create_topic_model('duozhiwang',10)
-    create_similarity_model('duozhiwang',30)
-
-    jingmeiti_docs = get_docs('jingmeiti')
-    create_text(docs=jingmeiti_docs, index='jingmeiti')
-    create_corpus('jingmeiti')  
-    create_topic_model('jingmeiti',10)
-    create_similarity_model('jingmeiti',30)
-
-    # 多知网和鲸媒体均为教育行业网站一起产生一个模型 特别关注教育行业 :)
-    alledu_docs = duozhiwang_docs+jingmeiti_docs
-    del(duozhiwang_docs)
-    del(jingmeiti_docs)
-    gc.collect()
-    create_text(docs=alledu_docs, index='alledu')
-    del(alledu_docs)
-    gc.collect()
-    create_corpus('alledu')  
-    create_topic_model('alledu',10)
-    create_similarity_model('alledu',30)
-
-    hurun_docs = get_docs('hurun')
-    create_text(docs=hurun_docs, index='hurun')
-    del(hurun_docs)
-    gc.collect()
-    create_corpus('hurun')  
-    create_topic_model('hurun',10)
-    create_similarity_model('hurun',30)
     
-
-    souhujiaodian_docs = get_docs('souhujiaodian')
-    create_text(docs=souhujiaodian_docs, index='souhujiaodian')
-    del(souhujiaodian_docs)
-    gc.collect()
-    create_corpus('souhujiaodian')  
-    create_topic_model('souhujiaodian',10)
-    create_similarity_model('souhujiaodian',60)
+    website=['cbnweek','hurun','duozhiwang','jingmeiti','fudaoquan','jiemodui','souhujiaodian','guandian']
+    industry={
+        'edu':{
+            'name':'edu',
+            'index':['duozhiwang','jingmeiti','fudaoquan','jiemodui']
+        },
+        'realestate':{
+            'name':'realestate',
+            'index':['souhujiaodian','guandian']
+        }
+    }
+    # 单个网站模型
+    for index in website:
+        create_index_models(index)
+    # 行业模型
+    create_industry_models(industry['edu'])
+    create_industry_models(industry['realestate'])
 
     # 训练所有预料的词向量 之所以放在alledu之前是为了避免排除其对应的texts pickle
     train_w2v_model_all()
@@ -556,7 +577,7 @@ def update_all_models():
     lg.info("copy similarity model to app/trained_model/")
     system('cp ./trained_model/*-LSI-index.* ../trained_model/')
 
-def create_texts_index(texts_pickle):
+def create_text_index(texts_pickle):
     '''
     此前有一些texts pickle文档没有生成 texts index pickle 通过该函数生成并保存
     此函数的功能已经在生成texts时已经添加 顾以后该函数基本上用不到
