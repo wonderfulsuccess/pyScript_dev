@@ -16,7 +16,7 @@ coloredlogs.install(level='DEBUG')
 es = Elasticsearch()
 
 def indexData(mode='i'):
-    "索引data目录下的所有csv文档到ES i:insert new data u:update exist data"
+    '''索引data目录下的所有csv文档到ES i:insert new data u:update exist data'''
     dir_name='./data/'
     # list data 目录下所有的csv文档
     csv_files = [f for f in listdir(dir_name) if isfile(join(dir_name, f))]

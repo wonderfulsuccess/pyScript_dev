@@ -545,15 +545,16 @@ def create_industry_models(industry,ts=10,ss=60):
     create_similarity_model(industry['name'],30)
 
 def update_all_models():
-    delete_sure = input('你确定要删除所有模型吗？')
-    if delete_sure != 'yes':
-        return
-    lg.warning('删除所有训练模型...')
-    system('rm -f ./trained_model/*')
-    system('rm -f ../trained_model/*')
-    lg.warning('删除训练模型完成')
+    # delete_sure = input('你确定要删除所有模型吗？')
+    # if delete_sure != 'yes':
+    #     return
+    # lg.warning('删除所有训练模型...')
+    # system('rm -f ./trained_model/*')
+    # system('rm -f ../trained_model/*')
+    # lg.warning('删除训练模型完成')
     
-    website=['cbnweek','hurun','duozhiwang','jingmeiti','fudaoquan','jiemodui','souhujiaodian','guandian']
+    # website=['cbnweek','hurun','duozhiwang','jingmeiti','fudaoquan','jiemodui','souhujiaodian','guandian']
+    website=['duozhiwang','jingmeiti','fudaoquan','jiemodui']
     industry={
         'edu':{
             'name':'edu',
@@ -567,9 +568,10 @@ def update_all_models():
     # 单个网站模型
     for index in website:
         create_index_models(index)
+    # create_index_models
     # 行业模型
     create_industry_models(industry['edu'])
-    create_industry_models(industry['realestate'])
+    # create_industry_models(industry['realestate'])
 
     # 训练所有预料的词向量 之所以放在alledu之前是为了避免排除其对应的texts pickle
     train_w2v_model_all()

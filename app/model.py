@@ -36,7 +36,7 @@ sim={
 def searchCbnWeekData(data, match_model,sort):
 
     search_body={
-        "size":100,
+        "size":500,
         "query": {
              "bool": {
                 "should": [
@@ -65,7 +65,7 @@ def searchCbnWeekData(data, match_model,sort):
 
 def searchArticleData(data, index, data_type, match_model, sort):
     search_body={
-        "size":100,
+        "size":500,
         "query": {
             match_model: {
                 "text":data,
@@ -96,7 +96,7 @@ def searchArticleData(data, index, data_type, match_model, sort):
 
 def searchAllData(data, match_model, sort):
     search_body={
-        "size":100,
+        "size":500,
         "query": {
             match_model: {
                 "text":data,

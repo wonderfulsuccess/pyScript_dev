@@ -14,13 +14,12 @@
         <h1>{{ res["search_data"]}} - {{ res['hits']['total'] }} 条结果</h1>
     </div>
     <ul class="w3-ul">
-
         {% for hit in res['hits']['hits'] %}
         <li>
             <div class="w3-content">
                 <div class="w3-row w3-margin">
                     <div class="w3-row w3-container">
-                        <h4 class="w3-light-blue"><a target="_blank" href='{{ hit["_source"]["link"] }}' style="text-decoration:none">{{ hit["_source"]["title"] }}</a></h4>
+                        <h4 class="w3-light-blue"><a target="_blank" href='{{ hit["_source"]["link"] }}' style="text-decoration:none"> {{ hit["_source"]["the_id"] }} : {{ hit["_source"]["title"] }}</a></h4>
                         <p>
                             <span class="w3-text-red">{{ hit["_source"]["website"]}}</span>
                             {{ hit["_source"]["date"] }}
@@ -44,7 +43,7 @@
         {% endfor %}
     </ul>
     <div class="w3-container w3-black">
-        <p>最多显示100条结果</p>
+        <p>最多显示500条结果</p>
     </div>
 </body>
 
